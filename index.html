@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SME AIcoAssist — for small shops in Singapore &amp; Southeast Asia</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#eef4ef;color:#17251b}
+header{background:#14532d;color:#fff;padding:18px 16px}header h1{margin:0;font-size:22px}header p{margin:6px 0 0;opacity:.9;font-size:14px}
+main{max-width:720px;margin:0 auto;padding:16px}.card{background:#fff;border:1px solid #d3e2d6;border-radius:14px;padding:16px;margin-bottom:14px}
+h2{margin:0 0 10px;font-size:18px}label{display:block;font-size:13px;color:#3d5344;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px;border:1px solid #cbd8cf;border-radius:9px;font-size:15px}
+button{background:#15803d;color:#fff;border:0;border-radius:9px;padding:11px 14px;font-size:15px;cursor:pointer}
+button.secondary{background:#e7f0e8;color:#14532d}button.danger{background:#b91c1c}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.tabs button{flex:1;min-width:110px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1;min-width:140px}
+.item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid #eef2ef}
+.small{font-size:13px;color:#5a6f60}.warn{background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;font-size:13px}
+.hidden{display:none}.ok{color:#15803d;font-weight:600}
+canvas{width:100%;height:160px}
+</style></head><body>
+<header><h1>SME AIcoAssist</h1><p>Reply faster. Keep your menu in one place. See what sells best.</p><p style="font-size:12px">Test version — no payments, delivery booking, or full accounting. Drafts are never sent automatically.</p></header>
+<main>
+<div id="auth" class="card">
+<h2>Sign up / Log in</h2>
+<p class="small">Each shop signs up on its own phone. Your shop data stays on that phone in this test version — it does not sync to another phone yet.</p>
+<label>Email</label><input id="email" type="email" placeholder="shop@example.com">
+<label>Password</label><input id="pw" type="password" placeholder="Choose a password">
+<div class="row" style="margin-top:12px"><button onclick="signup()">Create account</button><button class="secondary" onclick="login()">Log in</button></div>
+<p id="authMsg" class="small"></p>
+<p class="small">New here? Create an account, then set up your shop in about 2 minutes.</p>
+</div>
+
+<div id="app" class="hidden">
+<div class="card"><div class="row"><div><h2 id="shopTitle">My shop</h2><p class="small" id="shopSub"></p></div><button class="secondary" onclick="logout()">Log out</button></div>
+<div class="tabs">
+<button onclick="show('setup')">Setup</button><button onclick="show('menu')">Menu</button><button onclick="show('reply')">Reply drafts</button>
+<button onclick="show('social')">Social post</button><button onclick="show('sales')">Sales</button><button onclick="show('remind')">Reminders</button><button onclick="show('customer')">Customer menu</button>
+</div></div>
+
+<div id="v-setup" class="card"><h2>Shop setup — once</h2>
+<label>Shop name</label><input id="s_name"><label>Shop type</label><input id="s_type" placeholder="e.g. Chicken rice stall">
+<label>Hours</label><input id="s_hours" placeholder="e.g. 9am – 9pm, closed Mondays">
+<label>Location</label><input id="s_loc" placeholder="e.g. Blk 123, Clementi">
+<label>WhatsApp number</label><input id="s_wa" placeholder="e.g. 9123 4567">
+<label>Delivery / pick-up notes</label><textarea id="s_notes" placeholder="e.g. Self pick-up only, no delivery"></textarea>
+<button style="margin-top:12px" onclick="saveSetup()">Save shop setup</button><p id="setupMsg" class="small"></p></div>
+
+<div id="v-menu" class="card hidden"><h2>Menu &amp; prices</h2>
+<div class="row"><div><label>Item name</label><input id="m_name" placeholder="Chicken Rice"></div><div><label>Price (S$)</label><input id="m_price" type="number" step="0.10" placeholder="5.50"></div></div>
+<button style="margin-top:12px" onclick="addMenu()">Add item</button><div id="menuList" style="margin-top:10px"></div></div>
+
+<div id="v-reply" class="card hidden"><h2>Customer reply draft</h2>
+<p class="small">Paste the customer question, pick a language, check the draft, then copy it into WhatsApp yourself.</p>
+<label>Customer question</label><textarea id="q" rows="3" placeholder="e.g. Do you deliver to Jurong East?"></textarea>
+<label>Language</label><select id="lang"><option>English</option><option>Mandarin</option><option>Malay</option><option>Bahasa Indonesia</option></select>
+<button style="margin-top:12px" onclick="makeReply()">Make draft</button>
+<label>Draft — check and edit before sending</label><textarea id="draft" rows="6"></textarea>
+<button class="secondary" onclick="copyDraft()">Copy draft</button></div>
+
+<div id="v-social" class="card hidden"><h2>Social post draft</h2>
+<label>What do you want to post about?</label><input id="postTopic" placeholder="e.g. New roasted chicken rice today">
+<button style="margin-top:12px" onclick="makePost()">Make post draft</button>
+<label>Draft — check and edit before posting</label><textarea id="postDraft" rows="5"></textarea>
+<button class="secondary" onclick="copyPost()">Copy post</button></div>
+
+<div id="v-sales" class="card hidden"><h2>Daily sales log</h2>
+<div class="row"><div><label>Item</label><select id="saleItem"></select></div><div><label>Quantity</label><input id="saleQty" type="number" value="1" min="1"></div></div>
+<button style="margin-top:12px" onclick="addSale()">Log sale</button>
+<p><b>Today's total: <span id="todayTotal">$0.00</span></b></p><h3>Best-sellers</h3><div id="best"></div>
+<h3>Last 7 days</h3><canvas id="chart" width="640" height="160"></canvas><div id="salesList" class="small"></div></div>
+
+<div id="v-remind" class="card hidden"><h2>Reminders</h2>
+<div class="row"><input id="remText" placeholder="e.g. Restock chicken on Friday"><button onclick="addRem()">Add</button></div><div id="remList" style="margin-top:10px"></div></div>
+
+<div id="v-customer" class="card hidden"><h2>Customer menu view</h2><p class="small">Show this view to a customer, or copy the menu text to WhatsApp.</p><div id="custMenu"></div><button class="secondary" style="margin-top:10px" onclick="copyMenu()">Copy menu text</button></div>
+
+<div class="card warn"><b>Please check before you send.</b> Drafts use your saved shop facts, but prices, hours and delivery details can change. If a draft looks wrong, edit it before sending.</div>
+</div>
+</main>
+<script>
+const KEY='sme_aicoassist_accounts_v1';
+let accounts=JSON.parse(localStorage.getItem(KEY)||'{}'), current=null;
+function save(){localStorage.setItem(KEY,JSON.stringify(accounts))}
+async function hash(p){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return 'plain:'+p}}
+async function signup(){const e=email.value.trim().toLowerCase(),p=pw.value;if(!e||!p)return authMsg.textContent='Please enter email and password.';if(accounts[e])return authMsg.textContent='That email already has an account — please log in.';accounts[e]={pass:await hash(p),shop:{name:'',type:'',hours:'',loc:'',wa:'',notes:''},menu:[],sales:[],reminders:[]};save();current=e;loadApp();authMsg.textContent=''}
+async function login(){const e=email.value.trim().toLowerCase(),p=pw.value;if(!accounts[e]||accounts[e].pass!==await hash(p))return authMsg.textContent='Email or password not correct.';current=e;loadApp()}
+function logout(){current=null;document.getElementById('app').classList.add('hidden');document.getElementById('auth').classList.remove('hidden')}
+function acc(){return accounts[current]}
+function show(v){['setup','menu','reply','social','sales','remind','customer'].forEach(x=>document.getElementById('v-'+x).classList.toggle('hidden',x!==v));if(v==='menu')renderMenu();if(v==='sales')renderSales();if(v==='remind')renderRem();if(v==='customer')renderCust()}
+function loadApp(){document.getElementById('auth').classList.add('hidden');document.getElementById('app').classList.remove('hidden');const s=acc().shop;s_name.value=s.name;s_type.value=s.type;s_hours.value=s.hours;s_loc.value=s.loc;s_wa.value=s.wa;s_notes.value=s.notes;shopTitle.textContent=s.name||'My shop';shopSub.textContent=[s.type,s.hours,s.loc].filter(Boolean).join(' • ');show('setup')}
+function saveSetup(){const s=acc().shop;s.name=s_name.value.trim();s.type=s_type.value.trim();s.hours=s_hours.value.trim();s.loc=s_loc.value.trim();s.wa=s_wa.value.trim();s.notes=s_notes.value.trim();save();shopTitle.textContent=s.name||'My shop';shopSub.textContent=[s.type,s.hours,s.loc].filter(Boolean).join(' • ');setupMsg.textContent='Saved.';setupMsg.className='small ok'}
+function addMenu(){const n=m_name.value.trim(),p=parseFloat(m_price.value);if(!n||isNaN(p))return;acc().menu.push({name:n,price:p});save();m_name.value='';m_price.value='';renderMenu()}
+function renderMenu(){menuList.innerHTML=acc().menu.map((m,i)=>`<div class="item"><span>${m.name}</span><span>$${m.price.toFixed(2)} <button class="danger" onclick="delMenu(${i})">Remove</button></span></div>`).join('')||'<p class="small">No menu items yet.</p>';saleItem.innerHTML=acc().menu.map(m=>`<option value="${m.name}">${m.name} — $${m.price.toFixed(2)}</option>`).join('')}
+function delMenu(i){acc().menu.splice(i,1);save();renderMenu()}
+function money(x){return '$'+x.toFixed(2)}
+function makeReply(){const s=acc().shop,qv=q.value.toLowerCase(),lang=lang.value;const name=s.name||'our shop';
+const en=`Hi! Thanks for asking. ${qv.includes('deliver')?('For delivery: '+(s.notes||'please check with us')+'. '):''}${qv.includes('hour')||qv.includes('open')?('We are open '+(s.hours||'during our usual hours')+'. '):''}You can find us at ${s.loc||'our shop'}. ${s.wa?('WhatsApp us at '+s.wa+' if you need anything else. '):''}Thank you!`;
+const drafts={English:en,
+Mandarin:`您好！谢谢您的询问。${s.loc?('我们位于'+s.loc+'。'):''}${s.hours?('营业时间：'+s.hours+'。'):''}${s.notes?('取餐/送餐：'+s.notes+'。'):''}谢谢！`,
+Malay:`Hi! Terima kasih kerana bertanya. ${s.loc?('Kami di '+s.loc+'. '):''}${s.hours?('Waktu operasi: '+s.hours+'. '):''}${s.notes?('Penghantaran / ambil sendiri: '+s.notes+'. '):''}Terima kasih!`,
+'Bahasa Indonesia':`Hai! Terima kasih sudah bertanya. ${s.loc?('Kami di '+s.loc+'. '):''}${s.hours?('Jam buka: '+s.hours+'. '):''}${s.notes?('Antar / ambil sendiri: '+s.notes+'. '):''}Terima kasih!`};
+draft.value=(drafts[lang]||en)+`\n— ${name}`;}
+function copyDraft(){draft.select();document.execCommand('copy')}
+function makePost(){const s=acc().shop;postDraft.value=`${postTopic.value||'Fresh today'} at ${s.name||'our shop'}! ${s.loc?('Find us at '+s.loc+'. '):''}${s.hours?('Open '+s.hours+'. '):''}Come and try it today!`}
+function copyPost(){postDraft.select();document.execCommand('copy')}
+function addSale(){const item=saleItem.value;if(!item)return;const m=acc().menu.find(x=>x.name===item);acc().sales.push({date:new Date().toISOString().slice(0,10),item,qty:parseInt(saleQty.value)||1,price:m?m.price:0});save();renderSales()}
+function renderSales(){const a=acc(),today=new Date().toISOString().slice(0,10);let tot=0;const best={};a.sales.forEach(s=>{if(s.date===today)tot+=s.qty*s.price;best[s.item]=(best[s.item]||0)+s.qty});
+todayTotal.textContent=money(tot);best.innerHTML=Object.entries(best).sort((x,y)=>y[1]-x[1]).map(([k,v])=>`<div class="item"><span>${k}</span><span>${v} sold</span></div>`).join('')||'<p class="small">No sales logged yet.</p>';
+salesList.innerHTML=a.sales.slice(-20).reverse().map(s=>`${s.date} — ${s.qty} × ${s.item} = ${money(s.qty*s.price)}`).join('<br>');
+const ctx=document.getElementById('chart').getContext('2d');ctx.clearRect(0,0,640,160);const days=[...Array(7)].map((_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().slice(0,10)});const vals=days.map(d=>a.sales.filter(s=>s.date===d).reduce((t,s)=>t+s.qty*s.price,0));const max=Math.max(...vals,1);vals.forEach((v,i)=>{ctx.fillStyle='#15803d';ctx.fillRect(20+i*88,150-v/max*130,50,v/max*130);ctx.fillStyle='#333';ctx.font='11px sans-serif';ctx.fillText('$'+Math.round(v),20+i*88,145-v/max*130);ctx.fillText(days[i].slice(5),20+i*88,158)});}
+function addRem(){const t=remText.value.trim();if(!t)return;acc().reminders.push({text:t,done:false});save();remText.value='';renderRem()}
+function renderRem(){remList.innerHTML=acc().reminders.map((r,i)=>`<div class="item"><span style="${r.done?'text-decoration:line-through;color:#888':''}">${r.text}</span><span><button class="secondary" onclick="togRem(${i})">${r.done?'Undo':'Done'}</button> <button class="danger" onclick="delRem(${i})">Delete</button></span></div>`).join('')||'<p class="small">No reminders yet.</p>'}
+function togRem(i){acc().reminders[i].done=!acc().reminders[i].done;save();renderRem()}
+function delRem(i){acc().reminders.splice(i,1);save();renderRem()}
+function renderCust(){const s=acc().shop;custMenu.innerHTML=`<h3>${s.name||'Menu'}</h3><p class="small">${[s.type,s.hours,s.loc].filter(Boolean).join(' • ')}</p>`+acc().menu.map(m=>`<div class="item"><span>${m.name}</span><span>${money(m.price)}</span></div>`).join('')}
+function copyMenu(){const s=acc().shop;const t=`${s.name||'Menu'}\n`+acc().menu.map(m=>`${m.name} — ${money(m.price)}`).join('\n');navigator.clipboard&&navigator.clipboard.writeText(t);alert('Menu text copied — paste it into WhatsApp.')}
+</script></body></html>
