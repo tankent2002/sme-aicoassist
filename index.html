@@ -92,13 +92,33 @@ function addMenu(){const n=m_name.value.trim(),p=parseFloat(m_price.value);if(!n
 function renderMenu(){menuList.innerHTML=acc().menu.map((m,i)=>`<div class="item"><span>${m.name}</span><span>$${m.price.toFixed(2)} <button class="danger" onclick="delMenu(${i})">Remove</button></span></div>`).join('')||'<p class="small">No menu items yet.</p>';saleItem.innerHTML=acc().menu.map(m=>`<option value="${m.name}">${m.name} — $${m.price.toFixed(2)}</option>`).join('')}
 function delMenu(i){acc().menu.splice(i,1);save();renderMenu()}
 function money(x){return '$'+x.toFixed(2)}
-function makeReply(){const s=acc().shop,qv=q.value.toLowerCase(),lang=lang.value;const name=s.name||'our shop';
-const en=`Hi! Thanks for asking. ${qv.includes('deliver')?('For delivery: '+(s.notes||'please check with us')+'. '):''}${qv.includes('hour')||qv.includes('open')?('We are open '+(s.hours||'during our usual hours')+'. '):''}You can find us at ${s.loc||'our shop'}. ${s.wa?('WhatsApp us at '+s.wa+' if you need anything else. '):''}Thank you!`;
-const drafts={English:en,
-Mandarin:`您好！谢谢您的询问。${s.loc?('我们位于'+s.loc+'。'):''}${s.hours?('营业时间：'+s.hours+'。'):''}${s.notes?('取餐/送餐：'+s.notes+'。'):''}谢谢！`,
-Malay:`Hi! Terima kasih kerana bertanya. ${s.loc?('Kami di '+s.loc+'. '):''}${s.hours?('Waktu operasi: '+s.hours+'. '):''}${s.notes?('Penghantaran / ambil sendiri: '+s.notes+'. '):''}Terima kasih!`,
-'Bahasa Indonesia':`Hai! Terima kasih sudah bertanya. ${s.loc?('Kami di '+s.loc+'. '):''}${s.hours?('Jam buka: '+s.hours+'. '):''}${s.notes?('Antar / ambil sendiri: '+s.notes+'. '):''}Terima kasih!`};
-draft.value=(drafts[lang]||en)+`\n— ${name}`;}
+function makeReply(){const s=acc().shop,qv=(q.value||'').toLowerCase(),langEl=document.getElementById('lang'),lang=langEl.value||langEl.options[langEl.selectedIndex].text;const name=s.name||'our shop';
+const notes=(s.notes||'').toLowerCase();const noDel=notes.includes('no delivery')||notes.includes('self pick-up only')||notes.includes('self pickup only')||notes.includes('pick-up only')||notes.includes('pickup only');
+const isDel=qv.includes('deliver')||qv.includes('delivery');
+let place=qv.match(/to\s+([a-z ]+)\??$/)?.[1]?.trim()||'that area';place=place.charAt(0).toUpperCase()+place.slice(1);
+const loc=s.loc||'our shop',hours=s.hours||'our usual hours',wa=s.wa||'';
+const waEN=wa?(' WhatsApp us at '+wa+' if you need anything else.'):'', waMS=wa?(' WhatsApp kami di '+wa+' jika ada apa-apa lagi.'):'', waZH=wa?(' 如有需要，请 WhatsApp '+wa+'。'):'', waID=wa?(' WhatsApp kami di '+wa+' jika ada yang lain.'):'';
+let drafts;
+if(isDel&&noDel){
+drafts={
+English:`Hi! Thanks for asking. Sorry, we do not deliver to ${place}. You can pick up from ${loc}. We are open ${hours}.${waEN} Thank you!`,
+Mandarin:`您好！谢谢您的询问。抱歉，我们不送货到${place}。您可以在${loc}自取。营业时间：${hours}。${waZH}谢谢！`,
+Malay:`Hi! Terima kasih kerana bertanya. Maaf, kami tidak membuat penghantaran ke ${place}. Anda boleh ambil sendiri di ${loc}. Kami beroperasi ${hours}.${waMS} Terima kasih!`,
+'Bahasa Indonesia':`Hai! Terima kasih sudah bertanya. Maaf, kami tidak mengantar ke ${place}. Anda bisa ambil sendiri di ${loc}. Kami buka ${hours}.${waID} Terima kasih!`};
+} else if(isDel){
+drafts={
+English:`Hi! Thanks for asking. Yes, we deliver — ${s.notes||'please share your address and we will confirm'}. You can find us at ${loc}. We are open ${hours}.${waEN} Thank you!`,
+Mandarin:`您好！谢谢您的询问。我们提供送货服务。${s.notes?('送货安排：'+s.notes+'。'):''}我们位于${loc}，营业时间：${hours}。${waZH}谢谢！`,
+Malay:`Hi! Terima kasih kerana bertanya. Ya, kami membuat penghantaran. ${s.notes?('Butiran: '+s.notes+'. '):''}Kami di ${loc}, beroperasi ${hours}.${waMS} Terima kasih!`,
+'Bahasa Indonesia':`Hai! Terima kasih sudah bertanya. Ya, kami mengantar. ${s.notes?('Detail: '+s.notes+'. '):''}Kami di ${loc}, buka ${hours}.${waID} Terima kasih!`};
+} else {
+drafts={
+English:`Hi! Thanks for asking. ${qv.includes('hour')||qv.includes('open')?('We are open '+hours+'. '):''}You can find us at ${loc}.${waEN} Thank you!`,
+Mandarin:`您好！谢谢您的询问。我们位于${loc}，营业时间：${hours}。${waZH}谢谢！`,
+Malay:`Hi! Terima kasih kerana bertanya. Kami di ${loc}, beroperasi ${hours}.${waMS} Terima kasih!`,
+'Bahasa Indonesia':`Hai! Terima kasih sudah bertanya. Kami di ${loc}, buka ${hours}.${waID} Terima kasih!`};
+}
+draft.value=(drafts[lang]||drafts.English)+`\n— ${name}`;}
 function copyDraft(){draft.select();document.execCommand('copy')}
 function makePost(){const s=acc().shop;postDraft.value=`${postTopic.value||'Fresh today'} at ${s.name||'our shop'}! ${s.loc?('Find us at '+s.loc+'. '):''}${s.hours?('Open '+s.hours+'. '):''}Come and try it today!`}
 function copyPost(){postDraft.select();document.execCommand('copy')}
